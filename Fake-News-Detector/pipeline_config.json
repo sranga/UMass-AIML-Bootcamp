@@ -1,0 +1,41 @@
+{
+  "data_settings": {
+    "text_column": "text",
+    "label_column": "label",
+    "test_size": 0.2,
+    "random_state": 42
+  },
+  "preprocessing": {
+    "max_features": 5000,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "use_stopwords": true
+  },
+  "models_to_test": [
+    "Logistic_Regression",
+    "Random_Forest",
+    "Gradient_Boosting",
+    "SVM",
+    "Naive_Bayes",
+    "MLP"
+  ],
+  "hyperparameter_tuning": {
+    "cv_folds": 5,
+    "scoring_metric": "f1_macro",
+    "n_jobs": -1
+  },
+  "ensemble_settings": {
+    "voting_methods": [
+      "hard",
+      "soft"
+    ],
+    "use_bagging": true
+  },
+  "output_settings": {
+    "save_visualizations": true,
+    "save_detailed_report": true,
+    "create_summary": true
+  }
+}

@@ -10,6 +10,9 @@ import numpy as np
 import os
 import sys
 from datetime import datetime
+from fake_news_ml_pipeline import FakeNewsDetectionPipeline
+from visualization_analysis_module import FakeNewsVisualizationModule
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -169,17 +172,15 @@ def run_comprehensive_analysis(data_path: str = None,
     
     # Step 2: Load and validate data
     print("\n2. Loading and validating data...")
-    if data_path and os.path.exists(data_path):
-        print(f"Loading data from: {data_path}")
-        data = load_your_data(data_path)
+    if data_path:
+        if os.path.exists(data_path):
+            print(f"Loading data from: {data_path}")
+            data = load_your_data(data_path)
+        else:
+            raise FileNotFoundError(f"Dataset file not found: {data_path}")
     else:
-        print("Using sample dataset for demonstration...")
+        print("No dataset path provided. Using sample dataset for demonstration...")
         data = create_sample_fake_news_dataset(2000)
-        
-        # Save sample data for reference
-        sample_path = os.path.join(output_dir, "sample_dataset.csv")
-        data.to_csv(sample_path, index=False)
-        print(f"Sample dataset saved to: {sample_path}")
     
     # Validate required columns
     if text_column not in data.columns:
@@ -228,24 +229,71 @@ def run_comprehensive_analysis(data_path: str = None,
         with open(report_path, 'w') as f:
             f.write(results['report'])
         print(f"Comprehensive report saved to: {report_path}")
-        
-        # Save JSON results
+
+        # Save JSON results (exclude model objects)
         results_path = os.path.join(output_dir, "detailed_results.json")
         import json
-        
-        def convert_numpy(obj):
+
+        def is_serializable(obj):
+            """Check if object can be JSON serialized"""
+            # Check for sklearn models and other non-serializable objects
+            if hasattr(obj, 'fit') or hasattr(obj, 'predict'):
+                return False
+            # Check for specific sklearn types
+            obj_type = type(obj).__name__
+            if 'Classifier' in obj_type or 'Regressor' in obj_type or 'Estimator' in obj_type:
+                return False
+            return True
+
+        def make_serializable(obj):
+            """Recursively convert object to JSON-serializable format"""
+            # Handle numpy types
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
             elif isinstance(obj, (np.integer, np.int32, np.int64)):
                 return int(obj)
             elif isinstance(obj, (np.floating, np.float32, np.float64)):
                 return float(obj)
-            return obj
-        
-        with open(results_path, 'w') as f:
-            json.dump(results['results'], f, indent=2, default=convert_numpy)
+            elif isinstance(obj, (np.bool_, bool)):
+                return bool(obj)
+
+            # Handle dictionaries
+            elif isinstance(obj, dict):
+                result = {}
+                for key, value in obj.items():
+                    if is_serializable(value):
+                        result[key] = make_serializable(value)
+                    else:
+                        result[key] = f"<{type(value).__name__} object - not serialized>"
+                return result
+
+            # Handle lists
+            elif isinstance(obj, (list, tuple)):
+                return [make_serializable(item) if is_serializable(item)
+                        else f"<{type(item).__name__} object>"
+                        for item in obj]
+
+            # Handle primitives
+            elif isinstance(obj, (str, int, float, bool, type(None))):
+                return obj
+
+            # Non-serializable objects
+            else:
+                return f"<{type(obj).__name__} object - not serialized>"
+
+        # Create serializable copy of results
+        serializable_results = make_serializable(results['results'])
+
+        try:
+            with open(results_path, 'w') as f:
+                json.dump(serializable_results, f, indent=2)
+            print(f"Detailed results saved to: {results_path}")
+        except Exception as json_error:
+            print(f"Warning: Could not save JSON results: {str(json_error)}")
+            print("All other results (report, visualizations) were saved successfully.")
+
         print(f"Detailed results saved to: {results_path}")
-        
+
         # Step 5: Generate visualizations
         print("\n6. Generating visualizations...")
         try:
@@ -420,57 +468,6 @@ def quick_test_with_custom_data(texts: list, labels: list, test_name: str = "Cus
         if os.path.exists(temp_file):
             os.remove(temp_file)
 
-# Example usage and testing
-if __name__ == "__main__":
-    print("Fake News Detection Pipeline - Example Usage")
-    print("=" * 50)
-    
-    # Example 1: Run with sample data
-    print("\nExample 1: Running with sample dataset...")
-    try:
-        results = run_comprehensive_analysis()
-        print("Sample analysis completed successfully!")
-    except Exception as e:
-        print(f"Error in sample analysis: {str(e)}")
-    
-    # Example 2: Test with your own small dataset
-    print("\nExample 2: Quick test with custom data...")
-    
-    custom_texts = [
-        "BREAKING: Scientists discover miracle cure that doctors don't want you to know!",
-        "Government officials announced new healthcare policy based on recent studies.",
-        "You won't believe this shocking truth about vaccines!",
-        "Research published in Nature shows promising results for new treatment.",
-        "URGENT: Hidden agenda revealed - they don't want you to see this!",
-        "University study indicates positive effects of the intervention.",
-    ]
-    
-    custom_labels = [1, 0, 1, 0, 1, 0]  # 1=fake, 0=real
-    
-    try:
-        quick_test_with_custom_data(custom_texts, custom_labels, "Quick Custom Test")
-    except Exception as e:
-        print(f"Error in custom test: {str(e)}")
-    
-    # Example 3: Instructions for using your own dataset
-    print("\nExample 3: Using your own dataset")
-    print("-" * 35)
-    print("To use your own dataset:")
-    print("1. Prepare a CSV file with text and label columns")
-    print("2. Call: run_comprehensive_analysis('your_file.csv', 'text_col', 'label_col')")
-    print("3. Results will be saved to timestamped directory")
-    
-    # Example command for real usage:
-    print("\nExample command for real dataset:")
-    print("results = run_comprehensive_analysis(")
-    print("    data_path='fake_news_dataset.csv',")
-    print("    text_column='article_text',")
-    print("    label_column='is_fake',")
-    print("    output_dir='my_analysis_results'")
-    print(")")
-    
-    print("\nSetup complete! You can now use the pipeline with your data.")
-
 # Additional utility functions
 def validate_dataset_format(file_path: str) -> dict:
     """
@@ -583,14 +580,24 @@ def create_config_file(output_path: str = "pipeline_config.json") -> None:
     print(f"Configuration file created: {output_path}")
     print("Modify this file to customize pipeline behavior")
 
+
 if __name__ == "__main__":
-    # Create default config file
-    create_config_file()
-    
-    print("\nFake News Detection Pipeline Setup Complete!")
-    print("Files created:")
-    print("1. Main pipeline module")
-    print("2. Visualization module") 
-    print("3. Example usage script")
-    print("4. Configuration file")
-    print("\nReady to analyze fake news data!")
+    print("Fake News Detection Pipeline - LIAR Dataset Analysis")
+    print("=" * 50)
+
+    # Run with LIAR dataset
+    print("\nRunning analysis with LIAR dataset...")
+    try:
+        results = run_comprehensive_analysis(
+            data_path='data/liar_binary_combined.csv',
+            text_column='text',
+            label_column='label',
+            output_dir='liar_analysis_results'
+        )
+        print("\n✅ LIAR dataset analysis completed successfully!")
+        print(f"Results saved to: liar_analysis_results/")
+    except Exception as e:
+        print(f"❌ Error in LIAR analysis: {str(e)}")
+        import traceback
+
+        traceback.print_exc()

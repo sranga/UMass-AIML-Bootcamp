@@ -94,7 +94,7 @@ pip install -r requirements.txt
 ### Quick Start with Sample Data
 
 ```python
-from fake_news_pipeline import FakeNewsDetectionPipeline
+from fake_news_ml_pipeline import FakeNewsDetectionPipeline
 
 # Initialize pipeline
 pipeline = FakeNewsDetectionPipeline(random_state=42)
@@ -109,7 +109,7 @@ print(results['report'])
 ### Using Your Own Dataset
 
 ```python
-from fake_news_pipeline import FakeNewsDetectionPipeline
+from fake_news_ml_pipeline import FakeNewsDetectionPipeline
 
 # Initialize pipeline
 pipeline = FakeNewsDetectionPipeline(random_state=42)
