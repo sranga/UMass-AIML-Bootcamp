@@ -292,6 +292,25 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. **Use ensemble methods in production** - Better generalization
 5. **Regularly retrain models** - Adapt to evolving fake news patterns
 
+## Results
+
+Our system achieved **59.6% F1 score** on the LIAR dataset, competitive with 
+published research (55-65% range for traditional ML methods).
+
+### Performance Metrics
+- **F1 Score**: 59.6%
+- **Accuracy**: 61.7%
+- **Cross-Validation**: 58.8% ± 0.9%
+- **Training Time**: 2.3s (Logistic Regression)
+
+### Key Findings
+- ✅ No overfitting detected (CV-test gap < 1%)
+- ✅ High stability across validation strategies
+- ✅ Ensemble provides +0.2% improvement
+- ✅ Production-ready with MLOps pipeline
+
+See [full analysis](docs/CONCLUSIONS.md) for detailed results and interpretation.
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
