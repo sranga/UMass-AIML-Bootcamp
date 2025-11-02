@@ -1,0 +1,262 @@
+<!-- static/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 150px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result.fake {
+            background: #fee;
+            border-left: 4px solid #e53e3e;
+        }
+        .result.real {
+            background: #efe;
+            border-left: 4px solid #38a169;
+        }
+        .result h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .result.fake h2 { color: #e53e3e; }
+        .result.real h2 { color: #38a169; }
+        .confidence {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            transition: width 0.5s ease-out;
+            border-radius: 4px;
+        }
+        .result.fake .confidence-fill { background: #e53e3e; }
+        .result.real .confidence-fill { background: #38a169; }
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+        .examples h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .example {
+            font-size: 13px;
+            color: #888;
+            margin: 5px 0;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        .example:hover {
+            background: #e0e0e0;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Fake News Detector</h1>
+        <p class="subtitle">Powered by Machine Learning (59.6% F1 Score)</p>
+
+        <textarea id="newsText" placeholder="Paste news article or statement here..."></textarea>
+
+        <button onclick="checkNews()" id="checkBtn">
+            <span id="btnText">Analyze Text</span>
+        </button>
+
+        <div id="result" class="result">
+            <h2 id="resultText"></h2>
+            <p id="confidence" class="confidence"></p>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidenceFill"></div>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h3>Try these examples:</h3>
+            <div class="example" onclick="setExample(0)">
+                "Breaking: Government hiding shocking truth from citizens!"
+            </div>
+            <div class="example" onclick="setExample(1)">
+                "According to recent studies published in peer-reviewed journals..."
+            </div>
+            <div class="example" onclick="setExample(2)">
+                "Scientists HATE this one simple trick that doctors don't want you to know!"
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = [
+            "Breaking: Government hiding shocking truth from citizens! You won't believe what happens next!",
+            "According to recent studies published in peer-reviewed journals, researchers found evidence supporting the hypothesis.",
+            "Scientists HATE this one simple trick that doctors don't want you to know! Click here to learn more!"
+        ];
+
+        function setExample(index) {
+            document.getElementById('newsText').value = examples[index];
+        }
+
+        async function checkNews() {
+            const text = document.getElementById('newsText').value.trim();
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('checkBtn');
+            const btnText = document.getElementById('btnText');
+
+            if (text.length < 10) {
+                alert('Please enter at least 10 characters');
+                return;
+            }
+
+            // Show loading
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span>';
+            resultDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Prediction failed');
+                }
+
+                const data = await response.json();
+
+                // Show result
+                resultDiv.className = 'result ' + data.prediction;
+                resultDiv.style.display = 'block';
+
+                document.getElementById('resultText').textContent =
+                    data.prediction === 'fake' ? '❌ Likely Fake News' : '✅ Likely Real News';
+
+                const confidence = (data.confidence * 100).toFixed(1);
+                document.getElementById('confidence').textContent =
+                    `Confidence: ${confidence}% (Processing time: ${data.processing_time_ms.toFixed(0)}ms)`;
+
+                document.getElementById('confidenceFill').style.width = confidence + '%';
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Analyze Text';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('newsText').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                checkNews();
+            }
+        });
+    </script>
+</body>
+</html>
