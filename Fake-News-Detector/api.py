@@ -37,6 +37,7 @@ class PredictionRequest(BaseModel):
 
 
 class PredictionResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     prediction: str
     confidence: float
     probabilities: dict

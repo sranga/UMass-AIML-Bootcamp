@@ -1,8 +1,11 @@
 {
   "version": "1.0.0",
-  "created_at": "2025-11-02T09:51:03.085730",
+  "created_at": "2025-11-05T09:46:27.674309",
   "metrics": {
-    "f1_score": 0.596,
-    "accuracy": 0.617
-  }
+    "f1_score": 0.5751725266723229,
+    "accuracy": 0.6115670183665495
+  },
+  "model_type": "VotingClassifier",
+  "python_version": "1.26.4",
+  "environment": "fresh_training"
 }

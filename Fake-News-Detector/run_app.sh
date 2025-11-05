@@ -1,8 +1,9 @@
 #!/bin/zsh
 
-# Python 3.12 didn't work for me. So, installed 3.11
-conda create -n fakenews python=3.11
-conda activate fakenews
+# If Python 3.12 doesn't work uncomment the following lines
+#conda init
+#conda create -n fakenews python=3.11
+#conda activate fakenews
 
 # Install dependencies
 pip install --upgrade pip
