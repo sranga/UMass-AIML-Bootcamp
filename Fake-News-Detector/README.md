@@ -342,7 +342,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+- **Rangarajan Sreenivasan** - *Initial work* - [FakeNewsDetector](https://github.com/sranga/UMass-AIML-Bootcamp/tree/main/Fake-News-Detector)
 
 ## 🙏 Acknowledgments
 
@@ -350,12 +350,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with scikit-learn, pandas, and matplotlib
 - Thanks to the open-source community
 
-## 📧 Contact
-
-For questions or feedback:
-- Email: your.email@example.com
-- GitHub Issues: [Create an issue](https://github.com/yourusername/fake-news-detection/issues)
-- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
 
 ---
 
